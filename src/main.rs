@@ -1,10 +1,3 @@
-//! Blinks an LED
-//!
-//! This assumes that a LED is connected to pc13 as is the case on the blue pill board.
-//!
-//! Note: Without additional hardware, PC13 should not be used to drive an LED, see page 5.1.2 of
-//! the reference manual for an explanation. This is not an issue on the blue pill.
-
 #![deny(unsafe_code)]
 #![no_std]
 #![no_main]
@@ -13,7 +6,6 @@ use mpu6050_dmp::{quaternion::Quaternion, yaw_pitch_roll::YawPitchRoll};
 use panic_rtt_target as _;
 
 use cortex_m_rt::entry;
-use nb::block;
 use rtt_target::{rprintln, rtt_init_print};
 use stm32f1xx_hal::{
     i2c::{BlockingI2c, DutyCycle, Mode},
@@ -48,6 +40,7 @@ fn main() -> ! {
     // in order to configure the port. For pins 0-7, crl should be passed instead.
     let mut led = gpioc.pc13.into_push_pull_output(&mut gpioc.crh);
 
+    // Configure I2C pins
     let mut gpiob = dp.GPIOB.split();
     let scl = gpiob.pb6.into_alternate_open_drain(&mut gpiob.crl);
     let sda = gpiob.pb7.into_alternate_open_drain(&mut gpiob.crl);
@@ -81,7 +74,6 @@ fn main() -> ! {
     let mut timer = Timer::syst(syst, &clocks).counter_hz();
     timer.start(1.Hz()).unwrap();
 
-    // Wait for the timer to trigger an update and change the state of the LED
     loop {
         let len = sensor.get_fifo_count().unwrap();
         if len >= 28 {
